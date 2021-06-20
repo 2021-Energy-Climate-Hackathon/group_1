@@ -419,7 +419,7 @@ library(maptools)
 library(proj4)
 library(tictoc)</code></pre>
 <p>Specify directories and files</p>
-<pre class="r"><code>dir_in &lt;- '/home/h05/hadkb/SIRA/spf-energy'
+<pre class="r"><code>dir_in &lt;- '** directory path ***'
 file_in &lt;- 'ERA5_1hr_1979_01_DET.nc'
 
 path_file &lt;- file.path(dir_in, file_in, fsep = &quot;/&quot;)</code></pre>
@@ -429,8 +429,7 @@ path_file &lt;- file.path(dir_in, file_in, fsep = &quot;/&quot;)</code></pre>
 <pre class="r"><code>ncin &lt;- nc_open(path_file)
 
 print(ncin)</code></pre>
-<pre><code>## File /home/h05/hadkb/SIRA/spf-energy/ERA5_1hr_1979_01_DET.nc (NC_FORMAT_64BIT):
-## 
+<pre><code>##
 ##      6 variables (excluding dimension variables):
 ##         short u10[longitude,latitude,time]   
 ##             scale_factor: 0.000802634471179477
