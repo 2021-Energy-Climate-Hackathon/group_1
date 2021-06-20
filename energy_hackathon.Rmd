@@ -1,0 +1,287 @@
+---
+title: "Reading in a NetCDF file  in R"
+author: "kate Brown"
+date: "20/6/2021"
+output: 
+  html_document:
+    theme: cerulean
+    toc: TRUE
+---
+<style type="text/css">
+
+body{ /* Normal  */
+      font-size: 12pt;
+      color: DarkBlue;
+ }
+ 
+ </style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, results = "hold")
+```
+# Energy-climate data hackathon
+
+## Using R (version 3.6.3) with ERA5 data
+
+This notebook shows you how to work with the ERA5 data available on Jasmin using R. It demonstrates:
+   
+* how to open and read in a netcdf file,
+* how to read in just a part of a netcdf file,
+* how to plot a time series for an individual point
+* how to calculate a daily mean,
+* how to create a simple and more advanced plots
+     
+This  code requires the following:
+
+* a Netcdf file of  ERA5 temperature data
+
+Within R they are many ways of producing similar plots or analysis. The examples shown below illustrate one approach. I make no claim that this is the best or most efficient approach. However, I'm always interested in learning new or different approaches to writing code in R. If you have some comments or code that you would like to share, I can be contacted at kate.brown@metoffice.gov.uk. I hope you enjoy the Hackathon.
+
+Kate Brown 18/6/2021
+ 
+## Preparatory actions
+
+Load in relevant R libraries
+
+```{r load libraries, collapse=TRUE}
+library(ncdf4)
+library(raster)
+library(viridis)
+library(maps)
+library(maptools)
+library(proj4)
+library(tictoc)
+```
+
+Specify directories and files
+```{r File to  read in }
+
+dir_in <- '/home/h05/hadkb/SIRA/spf-energy'
+file_in <- 'ERA5_1hr_1979_01_DET.nc'
+
+path_file <- file.path(dir_in, file_in, fsep = "/")
+
+```
+## Open a netCDF data file for reading and print out information about the file and its contents.
+
+```{r}
+
+ncin <- nc_open(path_file)
+
+print(ncin)
+
+
+```
+
+Print the list  of objects that the netcdf file contains
+
+```{r}
+
+var_names <- unlist(attributes(ncin$var))
+
+print(unname(var_names))  # uname removes the name attributes in R, so just the names of the objects are printed
+
+```
+
+Read all the temperature data in from the netCDF file. The commands tic() and toc() time this process. You could use Sys.time() instead.
+
+```{r}
+
+tic("Time taken to read in all the data")
+
+temp_data <- ncvar_get(ncin, varid = "t2m") - 273.15
+
+toc()
+```
+
+## Read in just the data around the uk. 
+Subsetting the data to a smaller area results in the data being read in quicker.
+
+```{r, collapse = T}
+
+tic("Time taken to read in just the data around the UK")
+LonIdx <- which(ncin$dim$lon$vals > -12 & ncin$dim$lon$vals < 4)
+LatIdx <- which(ncin$dim$lat$vals > 49 & ncin$dim$lat$vals < 61)
+
+
+uk_data <- ncvar_get(ncin, varid = "t2m", start = c(LonIdx[1] ,LatIdx[1], 1), 
+                     count = c(length(LonIdx),length(LatIdx),ncin$dim$time$len))
+toc() 
+
+test_data <- temp_data
+print("Dimension of the temperature array")
+dim(temp_data)
+
+cat("\n First 10 observations in temp_data \n")
+head(temp_data)
+
+```
+## An approach to calculating the daily mean
+
+Check what type of calendar the data uses
+ 
+```{r}
+
+cat("Type of calendar:",ncin$dim$time$calendar)
+
+cat('\nTime is measured as', ncin$dim$time$units)
+
+```
+Create R datetime variable
+
+```{r}
+
+era5_datetime <- as.POSIXct(ncin$dim$time$vals*60*60, origin = "1900-01-01 00:00:00")
+
+```
+
+Print out the first 6 and last 6 times
+
+```{r}
+
+head(era5_datetime)
+tail(era5_datetime)
+```
+
+Calculate  the daily means
+
+```{r Calculate daily mean}
+
+
+day <- format(era5_datetime, "%d/%m/%Y") 
+
+
+# temp_data has 304 longitude, 214 latitudes and 744 hourly observations. 
+
+dim(temp_data) <- c(dim(temp_data)[1:2],24,31)
+
+day_mean <- apply(X = temp_data, c(1, 2, 4), FUN = mean) 
+
+```
+
+## Simple timeseries plot
+
+Produce a plot for a single point with the timeseries of the hourly temperature mean and overlay 
+the daily means
+
+```{r plot a timeseries for an individual point }
+lon <- 56
+lat <- 45
+
+plot(era5_datetime, 
+     temp_data[lon, lat, ,],
+     col = 1,
+     type = "l", 
+     xlab = format(era5_datetime[1], "%b %Y"),
+     ylab = "Temperature",
+     xaxt = "n",
+     main = "Hourly observations and daily mean of 2m Temperature")
+
+axis(1, at = era5_datetime[seq(from = 13, to = 744, by = 24)],
+     labels = format(era5_datetime[seq(from = 13,to = 744, by = 24)], "%d"))
+
+era5_day <- era5_datetime[seq(from = 13, to = 744, by = 24)]
+lines(era5_day, day_mean[lon, lat, ], col = 3)
+
+
+```
+
+## Plotting maps of the data
+
+Make a simple spatial plot of the first hour in the data.
+(There are probably many different ways in R that this can be done. The method 
+shown below uses rasters, I expect these plots could also be produced using
+ggplot or other graphical libraries in R)
+
+Read netCDF file into R as a raster brick - a multi-layer raster object. Here
+the layers are the hours. Plot the first hour.
+
+```{r}
+
+temp1 <- brick(path_file, varname = "t2m") - 273.15
+
+plot(temp1,1)
+```
+
+Change the colour scheme, I like viridis. It is meant to be good for most forms of
+colour blindness and good for printing out in black and white.
+
+```{r}
+plot(temp1, 31, col = viridis(256))
+```
+
+Narrow the output to just UK and Ireland, and add a coastline.
+
+```{r}
+
+uk_coast <- map("world",
+                c("UK", "Ireland", "Jersey", "Guernsey", "Isle of Man"),
+                xlim = c(-12, 4),
+                ylim = c(49, 61),
+                fill = T,
+                col = "transparent",
+                plot = F)
+  
+ids <- sapply(strsplit(uk_coast$names, ":"), function(x) x[1])
+
+# convert the coastlines a spatial polygon
+  
+uk_cst_sp <- map2SpatialPolygons(uk_coast, IDs = ids, proj4string =
+                                     CRS("+proj=longlat +datum=WGS84"))
+
+# Transform the spatial polygon from standard lat/lon projection to
+# the projection used for the land sea mask.
+
+# crop to he UK and Ireland
+
+temp_sp <- as(extent(-12, 4, 49, 61), 'SpatialPolygons')
+crs(temp_sp) <- "+proj=longlat +datum=WGS84 +no_defs"
+temp_uk <- crop(temp1,temp_sp)
+
+# plot the temperatures for the 5th hour and then add the coast outline
+
+plot(temp_uk, 5, col = viridis(256))
+
+plot(uk_cst_sp, add = T)
+
+
+
+```
+
+Select a different part of Europe: Iberian Peninsula
+
+```{r}
+
+# Select out parts of the world map that we want
+
+
+Iberian_coast <- map("world",
+                c("Spain","Portugal","Andorra","France"),
+                xlim = c(-11, 5),
+                ylim = c(34, 45),
+                fill = T,
+                col = "transparent",
+                plot = F)
+  
+ids <- sapply(strsplit(Iberian_coast$names, ":"), function(x) x[1])
+
+# convert the coastlines a spatial polygon
+  
+Ib_cst_sp <- map2SpatialPolygons(Iberian_coast, IDs = ids, proj4string =
+                                     CRS("+proj=longlat +datum=WGS84"))
+
+# Transform the spatial polygon from standard lat/lon projection to
+# the projection used for the land sea mask.
+
+
+
+temp_sp <- as(extent(-11, 5, 34, 45), 'SpatialPolygons')
+crs(temp_sp) <- "+proj=longlat +datum=WGS84 +no_defs"
+temp_spain <- crop(temp1,temp_sp)
+
+plot(temp_spain,1, col = viridis(256))
+plot(Ib_cst_sp, add = T)
+
+
+
+```
