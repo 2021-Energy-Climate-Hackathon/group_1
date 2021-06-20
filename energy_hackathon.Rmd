@@ -56,7 +56,7 @@ library(tictoc)
 Specify directories and files
 ```{r File to  read in }
 
-dir_in <- '/home/h05/hadkb/SIRA/spf-energy'
+dir_in <- '*** Your directory path ***'
 file_in <- 'ERA5_1hr_1979_01_DET.nc'
 
 path_file <- file.path(dir_in, file_in, fsep = "/")
