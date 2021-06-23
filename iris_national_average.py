@@ -32,13 +32,37 @@ def national_average_netcdf(years, country_mask, varname = 't2m_1979_2016', vari
     
     for year in years:
         
-        cubelist = iris.load(data_dir + filename + str(int(year)) + '*.nc', variable)
-        
-        for cube in cubelist:
-            cube.attributes.pop('history')
-            # this is required to merge into a single cube
+        if variable == '10 metre wind':
             
-        var_cube = cubelist.concatenate_cube()
+            U = iris.load(data_dir + filename + str(int(year)) + '*.nc', '10 metre U wind component')
+            V = iris.load(data_dir + filename + str(int(year)) + '*.nc', '10 metre V wind component')
+            
+            #print(iris.load(data_dir + filename + str(int(year)) + '*.nc'))
+            
+            for cube in U:
+                cube.attributes.pop('history')
+                # this is required to merge into a single cube
+            for cube in V:
+                cube.attributes.pop('history')
+                # this is required to merge into a single cube
+
+            U_cube = U.concatenate_cube()
+            V_cube = V.concatenate_cube()
+            
+            var_cube = U_cube.copy()
+            var_cube.rename(variable)
+            
+            var_cube.data = np.sqrt(U_cube.data**2 + V_cube.data**2)
+            
+        else:
+        
+            cubelist = iris.load(data_dir + filename + str(int(year)) + '*.nc', variable)
+        
+            for cube in cubelist:
+                cube.attributes.pop('history')
+                # this is required to merge into a single cube
+
+            var_cube = cubelist.concatenate_cube()
         
         var_mask = var_cube.copy()
         
