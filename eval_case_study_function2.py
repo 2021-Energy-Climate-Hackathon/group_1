@@ -29,13 +29,17 @@ def RMS_based_eval(timeseries_for_eval,field,case_no,method_str):
     MAE = np.mean(obs - timeseries_for_eval)
     RMS = np.sqrt(np.nanmean((obs - timeseries_for_eval)**2))
     
+    R2 = 1 - ( (np.mean ( (obs - timeseries_for_eval)**2 )) / (np.mean ( (obs - np.mean(obs))**2 )) )
+    
+    P = np.corrcoef(obs, timeseries_for_eval)
+    
     fig = plt.figure(figsize=(12,4))
     plt.plot(obs_date,obs,color='k',label='ERA5 obs')
     if field == 'T2m':
         plt.plot(obs_date,timeseries_for_eval,color='r',label=method_str)
         plt.ylabel('2m temperature ($^{o}$C)',fontsize=14)
         plt.title('Case study ' + case_no )
-        plt.xlabel('MAE = ' + str(MAE) + ' , RMS = ' + str(RMS))
+        plt.xlabel('MAE = ' + str(MAE) + ' , RMS = ' + str(RMS) + ' , R2 = ' + str(R2) + ' , PearsonC = ' + str(P))
     if field == 'speed10m':
         plt.plot(obs_date,timeseries_for_eval,color='b',label=method_str)
         plt.ylabel('10m wind speed (ms$^{-1}$)',fontsize=14)
@@ -46,4 +50,4 @@ def RMS_based_eval(timeseries_for_eval,field,case_no,method_str):
         plt.title('Case study ' + case_no )
     plt.legend(frameon=False)
     plt.show()
-    return([MAE, RMS])
+    return([MAE, RMS, R2, P])
