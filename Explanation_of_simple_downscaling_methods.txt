@@ -1,0 +1,95 @@
+Downscaling methods explained:
+(using only daily values of the field in question, and hourly historical data of same for "training")
+
+
+10m Wind speed:
+
+	For the target date, t:
+	
+		Take the daily max wind speed at t-2, t-1, t, t+1, t+2
+		
+		Fit a cubic polynomial, minimising RMSE with weights [0.1, 0.4, 1.0, 0.4, 0.1]
+		- assuming each daily mean value is the value at 12h
+		
+		Assign the hourly wind speeds on day t from 0h - 23h according to this polynomial
+		
+		
+		
+Surface shortwave:
+		
+	Training:
+	
+		Get 37 year hourly timeseries of shortwave
+	
+		For each individual day (37*365 = 13505):
+			calculate the mean shortwave
+			divide the shortwave at every hour in this day by this mean
+			
+		Now every day has a daily mean of one
+		
+		For each calendar day (365):
+			take the mean diurnal cycle over all (37) instances of this calendar day in training period
+			
+	Downscaling:
+	
+		For the target date:
+		
+			Take the mean dirnal cycle for the calendar day of the target date
+			
+			Multiply by the known daily mean
+			
+			
+			
+			
+2m Temperature (basic):
+
+	Training:
+	
+		Get 37 year hourly timeseries of shortwave
+	
+		For each individual day (37*365 = 13505):
+			calculate the mean temperature, and the range (Tmax - Tmin)
+			subtract from the temperature at every hour in this day the mean (for this day), and then divide by the range (for this day)
+			
+		Now every day has a daily mean of zero, and a range of one
+		
+		For each calendar day (365):
+			take the mean diurnal cycle over all (37) instances of this calendar day in training period
+			
+			It should improve the method to here re-normalise, to ensure these means have range one (otherwise the range will be less than one), 
+			but it makes RMSE slightly worse, so I don't do it
+			
+		
+	Downscaling:
+	
+		For the target date:
+		
+			Take the mean dirnal cycle for the calendar day of the target date
+			
+			Multiply by the known daily range (Tmax - Tmin), and add the daily mean
+			
+			
+			
+			
+Extension of 2m Temperature method:
+
+	Inter-daily consistency:
+	
+		To further improve the accuracy of the downscaled timeseries, use information of temperature the day before and after.
+		
+			If the temperature at 00UTC on day t, T(t, 00UTC) is colder than the daily minimum of day t-1, Tmin(t-1):
+			
+				rescale the temperature on day t between 00UTC and the time of daily maximum h(Tmax(t)), such that T(t, 00UTC) = Tmin(t-1)
+				
+			Similarly for if T(t, 23UTC) < Tmin(t+1)
+		
+		Additionally:
+		
+			If T(t, 00UTC) - T(t-1, 23UTC) > 1.5 * {typical temperature change for one hour}:
+			
+				rescale the temperature on day t between 00UTC and the time of daily minimum before the time of daily maximum {h(Tmin(t)) < h(Tmax(t))}
+				
+		And finally, rescale the entire diurnal cycle: new guess = current guess * (known daily mean / daily mean of current guess)
+		
+		To ensure that mean absolute error is zero by definition, as we have the information.
+		
