@@ -63,7 +63,7 @@ def training():
 
 
 
-def downscaling_basic(t2m_seasonal, t2m_daily_mean, t2m_daily_min, t2m_daily_max, nd, obs_dates):
+def downscaling_basic(t2m_seasonal, t2m_daily_mean, t2m_daily_min, t2m_daily_max, nd, obs_dates, re_normalise = False):
     
     monthoffset = [0, 1, -1, 0, 0, 1, 1, 2, 3, 3, 4, 4]
     # (monthno-1)*30 + monthoffset + date = day
@@ -83,6 +83,16 @@ def downscaling_basic(t2m_seasonal, t2m_daily_mean, t2m_daily_min, t2m_daily_max
 
         downscaled_days[i, :] = Tmean + Trange*t2m_seasonal.data[day, :]
         # t2m_seasonal is the mean diurnal cycle over each day of the calendar year for 40 years, with mean zero, and range 1
+        
+        if re_normalise:
+            # by taking a mean over many diurnal cycles with range 1, the mean will have a range less than 1. This will lead to an under-estimation of extremes(?)
+            # but doing it makes the RMSE worse, so the default option is false
+            t2ms_mean = t2m_seasonal.collapsed('hour_of_day', iananmean)
+            t2ms_max = t2m_seasonal.collapsed('hour_of_day', iris.analysis.MAX)
+            t2ms_min = t2m_seasonal.collapsed('hour_of_day', iris.analysis.MIN)
+            t2ms_range = t2ms_max - t2ms_min
+
+            t2m_seasonal = (t2m_seasonal - t2ms_mean)/t2ms_range
     
     return downscaled_days
         
