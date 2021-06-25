@@ -1,0 +1,69 @@
+Energy hackathon.
+
+
+
+All methods:
+
+    Instead of predicting diurnal cycle directly, why not remove the daily mean value from that day, and for temperature and irradiance, remove either the {mean [diurnal cycle minus daily mean]} or the {mean [(diurnal cycle minus daily mean) scaled by the daily range (max-min)]}, and predict the hourly variation from this? As we have that information.
+
+    Use mean solar to do same for net surface short wave: calculate mean diurnal cycle for calendar day, with daily mean 1, and multiply by daily mean
+    
+    Wind will be harder, and more dependant on weather patterns probably.
+
+
+
+Analogue method:
+
+- use pressure pca clustering on TEST DATA (gridded ERA5, daily mean) to define a number of weather patterns (for winter, first)
+- for a given date "d" NOT in TEST DATA:
+  - identify cluster that this date sits in
+  - for all dates in the TEST DATA in this cluster
+    - choose the N dates which best match "d", based on the minimisation of some weighted cost function of the best correlated daily variables (sum(p**2 * RMS**2) ? for p = mean pearson correlation coeff between daily variable and target variable over set of 24 hours)
+  - use this set of N dates as an "analogue ensemble" to provide a distribution of probable diurnal cycles for given day based on daily mean
+Note: use of clusters adds an element of nonlinearity: if we do correlations *within* each cluster, to weight analogue choices
+  
+  
+  
+Daily variables:
+
+  Mean over UK:
+    y Net surface short wave radiation (W/m2)
+      Cloud cover (%)
+      Precipitation mm/day
+      sea level pressure (hPa), 
+    y Max temperature (1.5m)
+      Specific humidity (%)
+    y Temperature mean (1.5m)
+    y Min temperature (1.5m)
+      Snow variables
+    y wind speed( at 10m in m/s)
+      Eastwards windspeed (m/s)
+      Northwards Windspeed (m/s)
+    
+  Principal components of:
+    Pressure anomalies
+    Wet Bulb Potential Temperature anonalies
+    
+  Date (/position in season)
+  
+ 
+ 
+To do:
+
+    - 
+    - 
+    
+    
+    
+Markov chains:
+
+  Predictor/output:
+  
+    Time of daily max, tmax(d)
+    
+    In chains going forwards (backwards) from tmax, the temperature difference between tmax+1 (tmax-1) and tmax
+    
+  Inputs:
+  
+     The daily variables listed above, both for today, d, and tomorrow d+1 (yesterday d-1)
+     Hour of day
