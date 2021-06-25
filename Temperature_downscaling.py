@@ -146,7 +146,7 @@ def test_case(case_no, nd, t2m_seasonal):
     obs_daily_min = np.min(obs_days, axis = 1)
     
     downscale_ts = downscaling_basic(t2m_seasonal, obs_daily_mean, obs_daily_min, obs_daily_max, nd, obs_dates)
-    downscale_ts_improved = consecutive_day_matching(downscaled_days, obs_daily_mean, obs_daily_min, nd)
+    downscale_ts_improved = consecutive_day_matching(downscale_ts, obs_daily_mean, obs_daily_min, nd)
     
     return np.reshape(downscale_ts, [nd*24]), np.reshape(downscale_ts_improved, [nd*24])
 

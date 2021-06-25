@@ -13,6 +13,8 @@ iananmean = iris.analysis.Aggregator('nanmean', np.nanmean)
 
 
 def downscaling(wind_daily_mean, nd):
+    
+    downscaled_days = np.zeros([nd,24])
 
     obs_mean = wind_daily_mean
     # extract permitted information: daily mean
