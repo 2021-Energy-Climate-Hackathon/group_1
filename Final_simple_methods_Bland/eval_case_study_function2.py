@@ -26,7 +26,7 @@ def RMS_based_eval(timeseries_for_eval,field,case_no,method_str):
     obs = np.loadtxt('/gws/pw/j05/cop26_hackathons/oxford/Group_folders/group_1/case_studies/Case_' + case_no + '_' + field + '.dat')
     
     obs_date = np.load('/gws/pw/j05/cop26_hackathons/oxford/Group_folders/group_1/case_studies/Case_' + case_no + '_date.npy')
-    MAE = np.mean(obs - timeseries_for_eval)
+    MAE = np.mean(np.abs(obs - timeseries_for_eval))
     RMS = np.sqrt(np.nanmean((obs - timeseries_for_eval)**2))
     
     R2 = 1 - ( (np.mean ( (obs - timeseries_for_eval)**2 )) / (np.mean ( (obs - np.mean(obs))**2 )) )
