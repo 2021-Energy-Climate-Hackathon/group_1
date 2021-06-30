@@ -58,6 +58,11 @@ def training():
     #each day in t2m_normalised has mean zero, and range 1
     
     t2m_seasonal = t2m_normalised.aggregated_by(['day_of_year'], iananmean)
+    # the more sensible way to aggregate this would be instead of individual calendar days, consider, for example, a month window about the target day
+    # and aggregate over normalised diurnal cycles within this window with similar:
+    #  - inter-day temperature variation (Tmean(t) - Tmin(t-1), Tmean(t) - Tmin(t+1), sim Tmean(t-1), Tmean(t+1))
+    #  - mean cloud cover for days t-1, t & t+1, to gauge whether the minimum is morning or night
+    # but aggregating over calendar day is one line so...
     
     return t2m_seasonal
 
