@@ -76,6 +76,7 @@ Conclusions:
 
   - On a national average scale, for the UK, the dirunal cycles can be reproduced very well for surface shortwave and 2m temperature using historical data to construct normalised hourly patterns, and daily mean values for the target period (and daily maxima and minima for temperature).
   - The national averages are largely not dependant on additional meteorological varaibles such as mean cloud cover or pressure patterns.
+    - that said, looking at case 2, temperature method can still lead to underprediction of minima: could benefit from overnight cloud cover?
   - I would hypothesise that a sensible way to reproduce national average wind speed would be to sub-divide the nation into a dozen or so regions (chosen such that they will typically experience similar wind velocities), downscale windspeed for each of these regions, using e.g. random forest, with inputs of (principal components of pressure and temperature, cloud, eastward & northward wind velocites (separately), min and max temperatures), and then take national average windspeed to be the mean of these.
   - I would also expect such more sophisticated methods to be more useful for downscaling 2m temperature and surface shortwave on more local scales
   - Whether the use of an analogue ensemble approach is appropriate for this problem will depend on the user's particular needs. It does not seem to be a good choice for the national average, but may be valuable on a grid-point scale.
